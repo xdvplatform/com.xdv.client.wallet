@@ -1,0 +1,39 @@
+plugins {
+	id 'org.springframework.boot' version '2.3.1.RELEASE'
+	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+	id 'java'
+}
+
+group = 'com.xdv.client'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// https://mvnrepository.com/artifact/org.xipki.iaik/sunpkcs11-wrapper
+	compile group: 'org.xipki.iaik', name: 'sunpkcs11-wrapper', version: '1.4.6'
+	compile group: 'com.google.inject.extensions', name: 'guice-multibindings', version: '2.0'
+// https://mvnrepository.com/artifact/org.digidoc4j/digidoc4j
+	compile group: 'org.digidoc4j', name: 'digidoc4j', version: '4.0.1'
+
+	compile 'io.reactivex.rxjava2:rxjava:2.0.8'
+	compile 'com.squareup.okhttp:okhttp:2.5.0'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	compile ('org.web3j:core:4.5.5')
+// https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15on
+	compile group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.64'
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+	}
+}
+
+test {
+	useJUnitPlatform()
+}
