@@ -8,6 +8,10 @@ import eu.europa.esig.dss.service.crl.OnlineCRLSource;
 import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.spi.DSSUtils;
+import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
+import eu.europa.esig.dss.spi.x509.CertificateSource;
+import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
+import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
 import eu.europa.esig.dss.validation.*;
 import eu.europa.esig.dss.validation.reports.CertificateReports;
 import eu.europa.esig.dss.validation.reports.Reports;
@@ -22,11 +26,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.MultiValueMap;
+import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
@@ -39,6 +45,21 @@ import static org.springframework.web.bind.annotation.RequestMethod.*;
 
 @RestController
 public class VerificationController {
+    CommonTrustedCertificateSource certificateSource = new CommonTrustedCertificateSource();
+    public VerificationController() {
+        try {
+            CertificateToken certGob = DSSUtils.loadCertificate(ResourceUtils.getFile("classpath:cagob.crt"));
+            CertificateToken certRoot = DSSUtils.loadCertificate(ResourceUtils.getFile("classpath:caraiz.crt"));
+            CertificateToken certPC2 = DSSUtils.loadCertificate(ResourceUtils.getFile("classpath:capc2.crt"));
+
+            certificateSource.addCertificate(certGob);
+            certificateSource.addCertificate(certRoot);
+            certificateSource.addCertificate(certPC2);
+        }
+        catch (Exception e) {
+System.console().writer().write(e.getMessage());
+        }
+    }
 
     private static final Logger log = LoggerFactory.getLogger(VerificationController.class);
 
@@ -63,7 +84,7 @@ public class VerificationController {
         CertificateVerifier cv = new CommonCertificateVerifier();
 
         CertificateValidator validator = CertificateValidator.fromCertificate(c);
-
+        cv.setTrustedCertSource(this.certificateSource);
         // Capability to download resources from AIA
         cv.setDataLoader(new CommonsDataLoader());
 

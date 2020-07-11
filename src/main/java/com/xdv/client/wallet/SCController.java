@@ -10,8 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
 import java.util.*;
@@ -67,6 +66,39 @@ public class SCController {
     }
 
 
+    @RequestMapping(
+            method = {POST},
+            value = "/sc/sign/{tokenIndex}")
+    public DeferredResult<ResponseEntity<?>> sign(
+            @PathVariable()  int tokenIndex,
+            @RequestBody() String pin,
+            @RequestBody()  byte[] data) {
+        DeferredResult<ResponseEntity<?>> deferredResult = new DeferredResult<ResponseEntity<?>>();
+        ResponseEntity.BodyBuilder internalErr = ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .contentType(MediaType.APPLICATION_JSON);
+
+        try {
+
+            PKCS11Service pkcs11Service = new PKCS11Service();
+            pkcs11Service.initialize();
+
+            byte[] signature = pkcs11Service.signWithToken(tokenIndex, data);
+            if (signature != null) {
+                deferredResult.setResult(ResponseEntity.ok(signature));
+            } else {
+                deferredResult.setResult(ResponseEntity
+                        .status(HttpStatus.BAD_REQUEST)
+                        .build());
+            }
+        }
+        catch (Exception ex){
+            log.error("err", ex);
+            deferredResult.setResult(internalErr.body(""));
+        }
+
+        return deferredResult;
+    }
 
 
 }
