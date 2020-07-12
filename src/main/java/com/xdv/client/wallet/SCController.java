@@ -71,8 +71,7 @@ public class SCController {
             value = "/sc/sign/{tokenIndex}")
     public DeferredResult<ResponseEntity<?>> sign(
             @PathVariable()  int tokenIndex,
-            @RequestBody() String pin,
-            @RequestBody()  byte[] data) {
+            @RequestBody()  SignPayload payload) {
         DeferredResult<ResponseEntity<?>> deferredResult = new DeferredResult<ResponseEntity<?>>();
         ResponseEntity.BodyBuilder internalErr = ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -83,7 +82,7 @@ public class SCController {
             PKCS11Service pkcs11Service = new PKCS11Service();
             pkcs11Service.initialize();
 
-            byte[] signature = pkcs11Service.signWithToken(tokenIndex, data);
+            byte[] signature = pkcs11Service.signWithToken(tokenIndex, Base64.getDecoder().decode(payload.getData()));
             if (signature != null) {
                 deferredResult.setResult(ResponseEntity.ok(signature));
             } else {
