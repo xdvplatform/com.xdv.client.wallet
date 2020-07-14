@@ -4,19 +4,24 @@ import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Module;
 import iaik.pkcs.pkcs11.objects.*;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
+import iaik.pkcs.pkcs11.wrapper.PKCS11Exception;
 
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.util.Base64;
 
 public class PKCS11Service {
+
 
     private Module module;
 
     public PKCS11Service(){
     }
     public void initialize() throws TokenException, IOException {
-        this.module = Module.getInstance("/usr/local/lib/softhsm/libsofthsm2.so");
+        this.module = Module.getInstance("/usr/lib/libaetpkss.so");
         this.module.initialize(new DefaultInitializeArgs());
     }
 
@@ -29,15 +34,12 @@ public class PKCS11Service {
         return slots[tokenIndex].getToken();
     }
 
-    public byte[] signWithToken(int tokenIndex, byte[] data) throws TokenException, NoSuchAlgorithmException {
+    public SignResponse signWithToken(int tokenIndex, String pin, byte[] data) throws TokenException, NoSuchAlgorithmException, CertificateException {
         Slot[] slots = this.module.getSlotList(true);
         Token token = slots[tokenIndex].getToken();
-        Session session = token.openSession(
-                Token.SessionType.SERIAL_SESSION,
-                Token.SessionReadWriteBehavior.RO_SESSION,
-                null,
-                null
-        );
+
+        Session session = this.openReadWriteSession(token, pin);
+
         final long mechCode = PKCS11Constants.CKM_RSA_PKCS;
 
         RSAPrivateKey searchTemplate = new RSAPrivateKey();
@@ -47,19 +49,90 @@ public class PKCS11Service {
         PKCS11Object[] foundSignatureKeyObjects = session.findObjects(1);
         session.findObjectsFinal();
 
+
+        X509PublicKeyCertificate searchTemplate2 = new X509PublicKeyCertificate();
+//        searchTemplate2.getId().setB;
+        session.findObjectsInit(searchTemplate2);
+        // find first
+        PKCS11Object[] certs = session.findObjects(2);
+        session.findObjectsFinal();
+
+        X509PublicKeyCertificate certificate = new X509PublicKeyCertificate();
         if (foundSignatureKeyObjects.length > 0) {
             Mechanism signatureMechanism = getSupportedMechanism(token, mechCode);
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] hashValue = md.digest(data);
 
-
-            session.signInit(signatureMechanism, (Key) foundSignatureKeyObjects[0]);
+            Key key = (Key) foundSignatureKeyObjects[0];
+            byte[] pub = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
+            session.signInit(signatureMechanism, key);
             byte[] signature = session.sign(hashValue);
-            return signature;
+            SignResponse response = new SignResponse();
+            response.setPublicKey(Base64.getEncoder().encodeToString(pub));
+            response.setSignature(Base64.getEncoder().encodeToString(signature));
+            return response;
         } else {
-            return "".getBytes();
+            return new SignResponse();
         }
 
+    }
+
+    protected Session openReadWriteSession(Token token, String pin)
+            throws TokenException {
+        return this.openAuthorizedSession(token, true,
+                pin == null ? null : pin.toCharArray());
+    }
+
+    /**
+     * Opens an authorized session for the given token. If the token requires the
+     * user to login for private operations, the method loggs in the user.
+     *
+     * @param token
+     *          The token to open a session for.
+     * @param rwSession
+     *          If the session should be a read-write session. This may be
+     *          Token.SessionReadWriteBehavior.RO_SESSION or
+     *          Token.SessionReadWriteBehavior.RW_SESSION.
+     * @param pin
+     *          PIN.
+     * @return The selected token or null, if no token is available or the user
+     *         canceled the action.
+     * @exception TokenException
+     *              If listing the tokens failed.
+     * @exception IOException
+     *              If writing a user prompt failed or if reading user input
+     *              failed.
+     */
+    public static Session openAuthorizedSession(
+            Token token, boolean rwSession, char[] pin)
+            throws TokenException {
+        if (token == null) {
+            throw new NullPointerException("Argument \"token\" must not be null.");
+        }
+
+        Session session = token.openSession(Token.SessionType.SERIAL_SESSION,
+                rwSession, null, null);
+
+        TokenInfo tokenInfo = token.getTokenInfo();
+        if (tokenInfo.isLoginRequired()) {
+            if (tokenInfo.isProtectedAuthenticationPath()) {
+                System.out.print(
+                        "Please enter the user-PIN at the PIN-pad of your reader.");
+                System.out.flush();
+                // the token prompts the PIN by other means; e.g. PIN-pad
+                session.login(Session.UserType.USER, null);
+            } else {
+                try {
+                    session.login(Session.UserType.USER, pin);
+                } catch (PKCS11Exception ex) {
+                    if (ex.getErrorCode() != PKCS11Constants.CKR_USER_ALREADY_LOGGED_IN) {
+                        throw ex;
+                    }
+                }
+            }
+        }
+
+        return session;
     }
 
     protected void assertSupport(Token token, Mechanism mech)

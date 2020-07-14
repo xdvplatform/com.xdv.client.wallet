@@ -82,9 +82,13 @@ public class SCController {
             PKCS11Service pkcs11Service = new PKCS11Service();
             pkcs11Service.initialize();
 
-            byte[] signature = pkcs11Service.signWithToken(tokenIndex, Base64.getDecoder().decode(payload.getData()));
-            if (signature != null) {
-                deferredResult.setResult(ResponseEntity.ok(signature));
+            SignResponse response = pkcs11Service.signWithToken(
+                    tokenIndex,
+                    payload.getPin(),
+                    Base64.getDecoder().decode(payload.getData())
+            );
+            if (response != null) {
+                deferredResult.setResult(ResponseEntity.ok(response));
             } else {
                 deferredResult.setResult(ResponseEntity
                         .status(HttpStatus.BAD_REQUEST)
