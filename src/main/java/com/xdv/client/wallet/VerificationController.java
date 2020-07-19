@@ -127,7 +127,7 @@ System.console().writer().write(e.getMessage());
             exposedHeaders = {"Authorization","Location"},
             allowedHeaders = {"Authorization", "Cache-Control", "Content-Type"},
             methods = {POST,  PUT, OPTIONS},
-            origins = {"http://localhost:8080","https://xdvmessaging.auth2factor.com"}
+            origins = {"http://localhost:8080","https://xdv.auth2factor.com"}
     )
     @RequestMapping(
             method = {POST, PUT, OPTIONS},

@@ -1,17 +1,25 @@
 package com.xdv.client.wallet;
+import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.spi.DSSUtils;
 import iaik.pkcs.pkcs11.*;
 import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Module;
 import iaik.pkcs.pkcs11.objects.*;
+import iaik.pkcs.pkcs11.objects.Key;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Exception;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cms.*;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.io.InputStream;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Base64;
+import java.util.Iterator;
 
 public class PKCS11Service {
 
@@ -34,13 +42,13 @@ public class PKCS11Service {
         return slots[tokenIndex].getToken();
     }
 
-    public SignResponse signWithToken(int tokenIndex, String pin, byte[] data) throws TokenException, NoSuchAlgorithmException, CertificateException {
+    public SignResponse signWithToken(int tokenIndex, String pin, byte[] data) throws TokenException, NoSuchAlgorithmException, CertificateException, CMSException, InvalidKeyException, NoSuchProviderException, SignatureException {
         Slot[] slots = this.module.getSlotList(true);
         Token token = slots[tokenIndex].getToken();
 
         Session session = this.openReadWriteSession(token, pin);
 
-        final long mechCode = PKCS11Constants.CKM_RSA_PKCS;
+        final long mechCode = PKCS11Constants.CKM_SHA256_RSA_PKCS;
 
         RSAPrivateKey searchTemplate = new RSAPrivateKey();
         searchTemplate.getSign().setBooleanValue(true);
@@ -67,9 +75,24 @@ public class PKCS11Service {
             byte[] pub = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
             session.signInit(signatureMechanism, key);
             byte[] signature = session.sign(hashValue);
+
+
+            byte[] cer1 = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
+            byte[] cer2 = ((X509PublicKeyCertificate)certs[1]).getValue().getByteArrayValue();
+
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            InputStream inCert1 = new ByteArrayInputStream(cer1);
+            X509Certificate certificate1 = (X509Certificate)certFactory.generateCertificate(inCert1);
+
+            InputStream inCert2 = new ByteArrayInputStream(cer2);
+            X509Certificate certificate2 = (X509Certificate)certFactory.generateCertificate(inCert2);
+            String pem = DSSUtils.convertToPEM(new CertificateToken(certificate1));
+
+
             SignResponse response = new SignResponse();
-            response.setPublicKey(Base64.getEncoder().encodeToString(pub));
+            response.setPublicKey(pem);
             response.setSignature(Base64.getEncoder().encodeToString(signature));
+            response.setDigest(Base64.getEncoder().encodeToString(hashValue));
             return response;
         } else {
             return new SignResponse();

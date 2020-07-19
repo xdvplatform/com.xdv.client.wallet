@@ -7,6 +7,7 @@ public class VerifyPayload {
     private String certificate;
     private String filename;
     private String contents;
+   // private String publicKey;
 
     public String getSignature() {
         return signature;
@@ -55,4 +56,5 @@ public class VerifyPayload {
     public void setContents(String contents) {
         this.contents = contents;
     }
+
 }
