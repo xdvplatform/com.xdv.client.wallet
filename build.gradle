@@ -5,8 +5,8 @@ plugins {
 }
 
 group = 'com.xdv.client'
-version = '0.0.1-SNAPSHOT'
-sourceCompatibility = '11'
+version = '1.0.0'
+sourceCompatibility = '8'
 
 repositories {
 	mavenCentral()
@@ -18,11 +18,15 @@ dependencies {
 	compile group: 'com.google.inject.extensions', name: 'guice-multibindings', version: '2.0'
 // https://mvnrepository.com/artifact/org.digidoc4j/digidoc4j
 	compile group: 'org.digidoc4j', name: 'digidoc4j', version: '4.0.1'
+// https://mvnrepository.com/artifact/org.springframework/spring-messaging
+	compile group: 'org.springframework', name: 'spring-messaging', version: '5.2.7.RELEASE'
 
 	compile 'io.reactivex.rxjava2:rxjava:2.0.8'
 	compile 'com.squareup.okhttp:okhttp:2.5.0'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+// https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-websocket
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-websocket', version: '2.3.0.RELEASE'
 
 	compile ('org.web3j:core:4.5.5')
 // https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15on

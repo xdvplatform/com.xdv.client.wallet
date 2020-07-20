@@ -4,6 +4,8 @@ public class SignResponse {
     private String publicKey;
     private String signature;
     private String digest;
+    private String type;
+    private String error;
 
     public String getPublicKey() {
         return publicKey;
@@ -27,5 +29,21 @@ public class SignResponse {
 
     public void setDigest(String digest) {
         this.digest = digest;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
     }
 }

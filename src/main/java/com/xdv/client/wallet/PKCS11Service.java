@@ -23,13 +23,39 @@ import java.util.Iterator;
 
 public class PKCS11Service {
 
+    private static String OS = System.getProperty("os.name").toLowerCase();
 
     private Module module;
 
     public PKCS11Service(){
     }
+    public static boolean isWindows() {
+
+        return (OS.indexOf("win") >= 0);
+
+    }
+
+    public static boolean isMac() {
+
+        return (OS.indexOf("mac") >= 0);
+
+    }
+
+    public static boolean isUnix() {
+
+        return (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 );
+
+    }
+
     public void initialize() throws TokenException, IOException {
-        this.module = Module.getInstance("/usr/lib/libaetpkss.so");
+        if (PKCS11Service.isUnix()) {
+            this.module = Module.getInstance("/usr/lib/libaetpkss.so");
+        } else if (PKCS11Service.isMac()) {
+            this.module = Module.getInstance("/usr/local/lib/libaetpkss.dylib");
+        } else if (PKCS11Service.isWindows()) {
+            this.module = Module.getInstance("C:/Windows/SysWOW64/aetpkssl.dll");
+        }
+
         this.module.initialize(new DefaultInitializeArgs());
     }
 
