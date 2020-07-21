@@ -66,11 +66,8 @@ public class WebsocketController {
         response.setType("signing");
         try {
             pkcs11Service.initialize();
-
-//            SignPayload payload = new SignPayload();
             Object p = message.getPayload();
-            // String json = new String(p);
-            ObjectMapper mapper  =new ObjectMapper();
+            ObjectMapper mapper  = new ObjectMapper();
             SignPayload payload;
             payload = mapper.readValue((byte[]) p, SignPayload.class);
 
@@ -78,6 +75,7 @@ public class WebsocketController {
                     payload.getTokenIndex(),
                     payload.getPin(),
                     Base64.getDecoder().decode(payload.getData()));
+            response.setType("signing");
         } catch (TokenException | NoSuchAlgorithmException | CertificateException | CMSException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
             e.printStackTrace();
             response.setError(e.getMessage());

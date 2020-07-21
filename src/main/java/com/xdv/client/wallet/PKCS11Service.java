@@ -69,6 +69,7 @@ public class PKCS11Service {
     }
 
     public SignResponse signWithToken(int tokenIndex, String pin, byte[] data) throws TokenException, NoSuchAlgorithmException, CertificateException, CMSException, InvalidKeyException, NoSuchProviderException, SignatureException {
+
         Slot[] slots = this.module.getSlotList(true);
         Token token = slots[tokenIndex].getToken();
 
