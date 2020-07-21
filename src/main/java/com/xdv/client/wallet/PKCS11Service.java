@@ -53,7 +53,7 @@ public class PKCS11Service {
         } else if (PKCS11Service.isMac()) {
             this.module = Module.getInstance("/usr/local/lib/libaetpkss.dylib");
         } else if (PKCS11Service.isWindows()) {
-            this.module = Module.getInstance("C:/Windows/SysWOW64/aetpkssl.dll");
+            this.module = Module.getInstance("C:\\Windows\\SysWOW64\\aetpksse.dll");
         }
 
         this.module.initialize(new DefaultInitializeArgs());
