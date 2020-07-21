@@ -24,9 +24,9 @@ public class WebSocketMessageConfig implements WebSocketMessageBrokerConfigurer 
 
     @Override
     public void configureWebSocketTransport(WebSocketTransportRegistration registration) {
-        registration.setMessageSizeLimit(200000000); // default : 64 * 1024
-        registration.setSendTimeLimit(20 * 100000); // default : 10 * 10000
-        registration.setSendBufferSizeLimit(3* 512 * 1024); // default : 512 * 1024
+        registration.setMessageSizeLimit(2000000000); // default : 64 * 1024
+        registration.setSendTimeLimit(20 * 10000); // default : 10 * 10000
+        registration.setSendBufferSizeLimit(100 * 512 * 1024); // default : 512 * 1024
     }
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
