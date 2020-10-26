@@ -1,3 +1,13 @@
+buildscript {
+	repositories {
+		maven { url uri('https://jitpack.io') }
+	}
+	dependencies {
+		classpath 'com.github.i-net-software:jwebassembly-gradle:master-SNAPSHOT'
+	}
+}
+
+
 plugins {
 	id 'org.springframework.boot' version '2.3.1.RELEASE'
 	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
@@ -7,12 +17,16 @@ plugins {
 group = 'com.xdv.client'
 version = '1.0.0'
 sourceCompatibility = '8'
-
+apply plugin: 'de.inetsoftware.jwebassembly'
 repositories {
 	mavenCentral()
+	maven { url 'https://jitpack.io' } // for snapshot of the API
+	jcenter()
 }
-
 dependencies {
+//	compile 'com.github.i-net-software:jwebassembly-api:master-SNAPSHOT'
+//	implementation 'de.inetsoftware:jwebassembly-compiler:0.3'
+
 	// https://mvnrepository.com/artifact/org.xipki.iaik/sunpkcs11-wrapper
 	compile group: 'org.xipki.iaik', name: 'sunpkcs11-wrapper', version: '1.4.6'
 	compile group: 'com.google.inject.extensions', name: 'guice-multibindings', version: '2.0'

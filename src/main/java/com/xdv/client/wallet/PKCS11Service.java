@@ -10,6 +10,7 @@ import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Exception;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.*;
+import org.springframework.boot.SpringApplication;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -18,6 +19,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.time.LocalDate;
 import java.util.Base64;
 import java.util.Iterator;
 
@@ -29,6 +31,8 @@ public class PKCS11Service {
 
     public PKCS11Service(){
     }
+
+
     public static boolean isWindows() {
 
         return (OS.indexOf("win") >= 0);
