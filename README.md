@@ -20,13 +20,15 @@ Gets a list of hardware modules with PKCS#11 support
 
 #### signWithToken
 
-**Arguments
+Signs a binary data
+
+**Arguments**
 
 - **tokenIndex**: A number with 0 index representing the slot
 - **pin**: Pin for the hardware module
 - **data**: Binary to sign
 
-**Returns a SignResponse object
+**Returns a SignResponse object**
 
 - **publicKey**: The corresponding public key for the key pair
 - **signature**: The signed binary data
@@ -83,4 +85,58 @@ Sample code
 
 ### Verification
 
+Verification with spring boot uses European Union ESIG DSS java toolkit and is found in `VerificationController`.
+
+XDV uses a `detached verification` approach, you need to call `verifySignature` methods
+
+```java
+
+    public String verifySignature(String name, String contentType, byte[] data, byte[] cert) throws CMSException {
+        return verifySignature(name, contentType, data,  cert, null, false );
+    }
+
+    public String verifySignature(String name, String contentType, byte[] data, byte[] cert, byte[] contents, boolean  detached) throws CMSException {
+    ...
+    }
+```
+
+
+#### verifySignature
+
+Verifies a PKCS#11 detached signature. It uses the 3 root certificates to match certificate chain of trust.
+
+**Arguments**
+
+- **name**: A number with 0 index representing the slot
+- **contentType**: Pin for the hardware module
+- **data**: Binary to verify
+- **cert**: Certification
+- **contents**: Content
+- **detached**: True if detached, else false
+
+**Returns a string with verification summary**
+
+Sample code
+
+```java
+            String res;
+            if (payload.getContents() == null) {
+                res = this.verifySignature(
+                        payload.getFilename(),
+                        null,
+                        payload.getSignature().getBytes(),
+                        Base64.decode(payload.getCertificate())
+                );
+            } else {
+                res = this.verifySignature(
+                        payload.getFilename(),
+                        null,
+                        payload.getSignature().getBytes(),
+                        Base64.decode(payload.getCertificate()),
+                        Base64.decode(payload.getContents()),
+                        true
+                );
+            }
+
+```
 ### MIT licensed 
