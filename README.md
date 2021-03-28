@@ -103,15 +103,18 @@ XDV uses a `detached verification` approach, you need to call `verifySignature` 
 
 #### verifySignature
 
-Verifies a PKCS#11 detached signature. It uses the 3 root certificates to match certificate chain of trust.
+Verifies a PKCS#11 in detached signature mode. It uses the 3 root certificates to match certificate chain of trust.
+
+> Note: XDV uses detached signature because it allows for scalability in server side scenarios, where you need to validate documents in batch mode, useful
+> for government entities. Right now, the most common use case used in the Republic of Panama is visual, attached signatures inside PDF documents. Automated tools required to parse the complete PDF file to access the signature, with detached signatures no parsing is required.
 
 **Arguments**
 
-- **name**: A number with 0 index representing the slot
-- **contentType**: Pin for the hardware module
-- **data**: Binary to verify
-- **cert**: Certification
-- **contents**: Content
+- **name**: Filename
+- **contentType**: File content type aka mime type
+- **data**: Signature (aka detached signatured)
+- **cert**: Certificate
+- **contents**: File Content
 - **detached**: True if detached, else false
 
 **Returns a string with verification summary**
