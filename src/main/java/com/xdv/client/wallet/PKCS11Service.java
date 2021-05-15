@@ -1,4 +1,8 @@
 package com.xdv.client.wallet;
+
+import java.security.*;
+import com.nimbusds.jose.*;
+import com.nimbusds.jwt.*;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.DSSUtils;
 import iaik.pkcs.pkcs11.*;
@@ -128,7 +132,63 @@ public class PKCS11Service {
         } else {
             return new SignResponse();
         }
+    }
 
+    public SignResponse signJWT(int tokenIndex, String pin, byte[] data) throws TokenException, NoSuchAlgorithmException, CertificateException, CMSException, InvalidKeyException, NoSuchProviderException, SignatureException {
+
+        Slot[] slots = this.module.getSlotList(true);
+        Token token = slots[tokenIndex].getToken();
+
+        Session session = this.openReadWriteSession(token, pin);
+
+        final long mechCode = PKCS11Constants.CKM_SHA256_RSA_PKCS;
+
+        RSAPrivateKey searchTemplate = new RSAPrivateKey();
+        searchTemplate.getSign().setBooleanValue(true);
+        session.findObjectsInit(searchTemplate);
+        // find first
+        PKCS11Object[] foundSignatureKeyObjects = session.findObjects(1);
+        session.findObjectsFinal();
+
+        X509PublicKeyCertificate searchTemplate2 = new X509PublicKeyCertificate();
+//        searchTemplate2.getId().setB;
+        session.findObjectsInit(searchTemplate2);
+        // find first
+        PKCS11Object[] certs = session.findObjects(2);
+        session.findObjectsFinal();
+
+        X509PublicKeyCertificate certificate = new X509PublicKeyCertificate();
+        if (foundSignatureKeyObjects.length > 0) {
+            Mechanism signatureMechanism = getSupportedMechanism(token, mechCode);
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hashValue = md.digest(data);
+
+            Key key = (Key) foundSignatureKeyObjects[0];
+            byte[] pub = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
+            session.signInit(signatureMechanism, key);
+            byte[] signature = session.sign(hashValue);
+
+
+            byte[] cer1 = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
+            byte[] cer2 = ((X509PublicKeyCertificate)certs[1]).getValue().getByteArrayValue();
+
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            InputStream inCert1 = new ByteArrayInputStream(cer1);
+            X509Certificate certificate1 = (X509Certificate)certFactory.generateCertificate(inCert1);
+
+            InputStream inCert2 = new ByteArrayInputStream(cer2);
+            X509Certificate certificate2 = (X509Certificate)certFactory.generateCertificate(inCert2);
+            String pem = DSSUtils.convertToPEM(new CertificateToken(certificate1));
+
+
+            SignResponse response = new SignResponse();
+            response.setPublicKey(pem);
+            response.setSignature(Base64.getEncoder().encodeToString(signature));
+            response.setDigest(Base64.getEncoder().encodeToString(hashValue));
+            return response;
+        } else {
+            return new SignResponse();
+        }
     }
 
     protected Session openReadWriteSession(Token token, String pin)
