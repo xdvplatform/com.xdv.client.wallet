@@ -2,7 +2,12 @@ package com.xdv.client.wallet;
 
 import java.security.*;
 import com.nimbusds.jose.*;
+import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
+import com.nimbusds.jose.jca.JCAContext;
+import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.*;
+import demo.pkcs.pkcs11.wrapper.signatures.KeyUtil;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.DSSUtils;
 import iaik.pkcs.pkcs11.*;
@@ -20,12 +25,17 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.*;
+import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.RSAPublicKeySpec;
+import java.text.ParseException;
 import java.time.LocalDate;
 import java.util.Base64;
 import java.util.Iterator;
+import java.util.Set;
 
 public class PKCS11Service {
 
@@ -76,22 +86,13 @@ public class PKCS11Service {
         return slots[tokenIndex].getToken();
     }
 
-    public SignResponse signWithToken(int tokenIndex, String pin, byte[] data) throws TokenException, NoSuchAlgorithmException, CertificateException, CMSException, InvalidKeyException, NoSuchProviderException, SignatureException {
+
+    public SignResponse getPublicKey(int tokenIndex, String pin) throws TokenException, NoSuchAlgorithmException, CertificateException, CMSException, InvalidKeyException, NoSuchProviderException, SignatureException {
 
         Slot[] slots = this.module.getSlotList(true);
         Token token = slots[tokenIndex].getToken();
 
         Session session = this.openReadWriteSession(token, pin);
-
-        final long mechCode = PKCS11Constants.CKM_SHA256_RSA_PKCS;
-
-        RSAPrivateKey searchTemplate = new RSAPrivateKey();
-        searchTemplate.getSign().setBooleanValue(true);
-        session.findObjectsInit(searchTemplate);
-        // find first
-        PKCS11Object[] foundSignatureKeyObjects = session.findObjects(1);
-        session.findObjectsFinal();
-
 
         X509PublicKeyCertificate searchTemplate2 = new X509PublicKeyCertificate();
 //        searchTemplate2.getId().setB;
@@ -100,18 +101,8 @@ public class PKCS11Service {
         PKCS11Object[] certs = session.findObjects(2);
         session.findObjectsFinal();
 
-        X509PublicKeyCertificate certificate = new X509PublicKeyCertificate();
-        if (foundSignatureKeyObjects.length > 0) {
-            Mechanism signatureMechanism = getSupportedMechanism(token, mechCode);
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hashValue = md.digest(data);
 
-            Key key = (Key) foundSignatureKeyObjects[0];
-            byte[] pub = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
-            session.signInit(signatureMechanism, key);
-            byte[] signature = session.sign(hashValue);
-
-
+        if (certs.length > 0) {
             byte[] cer1 = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
             byte[] cer2 = ((X509PublicKeyCertificate)certs[1]).getValue().getByteArrayValue();
 
@@ -122,19 +113,92 @@ public class PKCS11Service {
             InputStream inCert2 = new ByteArrayInputStream(cer2);
             X509Certificate certificate2 = (X509Certificate)certFactory.generateCertificate(inCert2);
             String pem = DSSUtils.convertToPEM(new CertificateToken(certificate1));
-
+            String pem2 = DSSUtils.convertToPEM(new CertificateToken(certificate2));
 
             SignResponse response = new SignResponse();
-            response.setPublicKey(pem);
-            response.setSignature(Base64.getEncoder().encodeToString(signature));
-            response.setDigest(Base64.getEncoder().encodeToString(hashValue));
+            String temp = Base64.getEncoder().encodeToString(certificate1.getPublicKey().getEncoded());
+            String publicKeyPEM = "-----BEGIN PUBLIC KEY-----\n" + temp;
+            publicKeyPEM = publicKeyPEM + "\n-----END PUBLIC KEY-----\n";
+
+            response.setPublicKey(temp);
+            response.setPublicKey2(pem);
             return response;
         } else {
             return new SignResponse();
         }
     }
 
-    public SignResponse signJWT(int tokenIndex, String pin, byte[] data) throws TokenException, NoSuchAlgorithmException, CertificateException, CMSException, InvalidKeyException, NoSuchProviderException, SignatureException {
+    public SignResponse signWithToken(int tokenIndex, String pin, byte[] data) throws TokenException, NoSuchAlgorithmException, CertificateException, CMSException, InvalidKeyException, NoSuchProviderException, SignatureException, InvalidKeySpecException {
+
+        Slot[] slots = this.module.getSlotList(true);
+        Token token = slots[tokenIndex].getToken();
+
+        Session session = this.openReadWriteSession(token, pin);
+
+        final long mechCode = PKCS11Constants.CKM_SHA256_RSA_PKCS;
+
+        RSAPrivateKey searchTemplate = new RSAPrivateKey();
+        searchTemplate.getSign().setBooleanValue(true);
+        session.findObjectsInit(searchTemplate);
+        // find first
+        PKCS11Object[] foundSignatureKeyObjects = session.findObjects(2);
+        session.findObjectsFinal();
+
+
+        X509PublicKeyCertificate searchTemplate2 = new X509PublicKeyCertificate();
+//        searchTemplate2.getId().setB;
+        session.findObjectsInit(searchTemplate2);
+        // find first
+        PKCS11Object[] certs = session.findObjects(2);
+        session.findObjectsFinal();
+
+        X509PublicKeyCertificate certificate = new X509PublicKeyCertificate();
+        if (foundSignatureKeyObjects.length > 0) {
+            Mechanism signatureMechanism = getSupportedMechanism(token, mechCode);
+            // MessageDigest md = MessageDigest.getInstance("SHA-256");
+            // byte[] hashValue = md.digest(data);
+
+            Key key = (Key) foundSignatureKeyObjects[0];
+            // key.
+            // byte[] pub = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
+            session.signInit(signatureMechanism, key);
+            byte[] signature = session.sign(data);
+
+            byte[] cer1 = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
+            byte[] cer2 = ((X509PublicKeyCertificate)certs[1]).getValue().getByteArrayValue();
+
+            CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+            InputStream inCert1 = new ByteArrayInputStream(cer1);
+            X509Certificate certificate1 = (X509Certificate)certFactory.generateCertificate(inCert1);
+
+            InputStream inCert2 = new ByteArrayInputStream(cer2);
+            X509Certificate certificate2 = (X509Certificate)certFactory.generateCertificate(inCert2);
+            String pem = DSSUtils.convertToPEM(new CertificateToken(certificate1));
+
+            RSAPublicKeySpec spec = new RSAPublicKeySpec(
+                    ((java.security.interfaces.RSAPublicKey)certificate1.getPublicKey()).getModulus(),
+                    ((java.security.interfaces.RSAPublicKey)certificate1.getPublicKey()).getPublicExponent());
+
+            KeyFactory factory = KeyFactory.getInstance("RSA");
+
+            PublicKey pub = factory.generatePublic(spec);
+            Signature rsaVerify = Signature.getInstance("SHA256withRSA", "BC");
+            rsaVerify.initVerify(pub);
+            rsaVerify.update(data);
+            rsaVerify.verify(signature);
+
+            SignResponse response = new SignResponse();
+            // response.setPublicKey(pem);
+            response.setSignature(Base64URL.encode((signature)).toJSONString());
+            // response.setDigest(Base64.getEncoder().encodeToString(hashValue));
+            return response;
+        } else {
+            return new SignResponse();
+        }
+    }
+
+
+    public SignResponse signJWT(int tokenIndex, String pin, byte[] data) throws TokenException, NoSuchAlgorithmException, CertificateException, CMSException, InvalidKeyException, NoSuchProviderException, SignatureException, ParseException, JOSEException {
 
         Slot[] slots = this.module.getSlotList(true);
         Token token = slots[tokenIndex].getToken();
@@ -159,14 +223,62 @@ public class PKCS11Service {
 
         X509PublicKeyCertificate certificate = new X509PublicKeyCertificate();
         if (foundSignatureKeyObjects.length > 0) {
-            Mechanism signatureMechanism = getSupportedMechanism(token, mechCode);
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] hashValue = md.digest(data);
+            String aa = new String(data);
+            String a = aa.split("\\.")[0];
+            String   b  = aa.split("\\.")[1];
+            SignedJWT signedJWT = new SignedJWT(
+                    Base64URL.from(a),Base64URL.from(b),Base64URL.encode(""));
 
-            Key key = (Key) foundSignatureKeyObjects[0];
-            byte[] pub = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
-            session.signInit(signatureMechanism, key);
-            byte[] signature = session.sign(hashValue);
+            signedJWT.sign(
+                    new JWSSigner() {
+                        @Override
+                        public Base64URL sign(JWSHeader header, byte[] signingInput) throws JOSEException {
+                            Mechanism signatureMechanism = null;
+                            try {
+                                signatureMechanism = getSupportedMechanism(token, mechCode);
+                            } catch (TokenException e) {
+                                e.printStackTrace();
+                            }
+                            MessageDigest md = null;
+                            try {
+                                md = MessageDigest.getInstance("SHA-256");
+
+
+                                
+                            } catch (NoSuchAlgorithmException e) {
+                                e.printStackTrace();
+                            }
+                            byte[] hashValue = md.digest(signingInput);
+
+
+                            Key key = (Key) foundSignatureKeyObjects[0];
+                            byte[] pub = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
+                            try {
+                                session.signInit(signatureMechanism, key);
+                            } catch (TokenException e) {
+                                e.printStackTrace();
+                            }
+                            byte[] signature = new byte[0];
+                            try {
+                                signature = session.sign(hashValue);
+                            } catch (TokenException e) {
+                                e.printStackTrace();
+                            }
+
+                            return Base64URL.encode(signature);
+                        }
+
+                        @Override
+                        public Set<JWSAlgorithm> supportedJWSAlgorithms() {
+                            return null;
+                        }
+
+                        @Override
+                        public JCAContext getJCAContext() {
+                            return null;
+                        }
+                    }
+            );
 
 
             byte[] cer1 = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
@@ -180,11 +292,10 @@ public class PKCS11Service {
             X509Certificate certificate2 = (X509Certificate)certFactory.generateCertificate(inCert2);
             String pem = DSSUtils.convertToPEM(new CertificateToken(certificate1));
 
-
-            SignResponse response = new SignResponse();
+            String sig = signedJWT.getSignature().toJSONString();
+                    SignResponse response = new SignResponse();
             response.setPublicKey(pem);
-            response.setSignature(Base64.getEncoder().encodeToString(signature));
-            response.setDigest(Base64.getEncoder().encodeToString(hashValue));
+            response.setSignature(sig);
             return response;
         } else {
             return new SignResponse();

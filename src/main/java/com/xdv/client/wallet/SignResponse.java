@@ -2,6 +2,7 @@ package com.xdv.client.wallet;
 
 public class SignResponse {
     private String publicKey;
+    private String publicKey2;
     private String signature;
     private String digest;
     private String type;
@@ -45,5 +46,13 @@ public class SignResponse {
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public String getPublicKey2() {
+        return publicKey2;
+    }
+
+    public void setPublicKey2(String publicKey2) {
+        this.publicKey2 = publicKey2;
     }
 }

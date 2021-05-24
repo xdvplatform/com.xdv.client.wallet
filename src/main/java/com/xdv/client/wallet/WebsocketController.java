@@ -2,6 +2,7 @@ package com.xdv.client.wallet;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.nimbusds.jose.JOSEException;
 import iaik.pkcs.pkcs11.Slot;
 import iaik.pkcs.pkcs11.TokenException;
 import org.bouncycastle.cms.CMSException;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.web3j.crypto.Sign;
+import org.web3j.utils.Convert;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -19,6 +21,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
+import java.security.spec.InvalidKeySpecException;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
@@ -58,9 +62,36 @@ public class WebsocketController {
         return slotsResponse;
     }
 
+
+    @MessageMapping("/get_certificates")
+    @SendTo("/xdv/certificates")
+    public SignResponse getCerts(Message message) {
+        SignResponse response = new SignResponse();
+        PKCS11Service pkcs11Service = new PKCS11Service();
+        response.setType("certificates");
+        try {
+            pkcs11Service.initialize();
+            Object p = message.getPayload();
+            ObjectMapper mapper  = new ObjectMapper();
+            SignPayload payload;
+            payload = mapper.readValue((byte[]) p, SignPayload.class);
+
+            response = pkcs11Service.getPublicKey(
+                    payload.getTokenIndex(),
+                    payload.getPin());
+            response.setType("certificates");
+        } catch (TokenException | NoSuchAlgorithmException | CertificateException | CMSException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
+            e.printStackTrace();
+            response.setError(e.getMessage());
+        } catch (IOException e) {
+            response.setError(e.getMessage());
+        }
+        return response;
+    }
+
     @MessageMapping("/sign")
-    @SendTo("/xdv/messages")
-    public SignResponse sign(Message message) {
+    @SendTo("/xdv/signed")
+    public SignResponse sign(Message message) throws ParseException, JOSEException {
         SignResponse response = new SignResponse();
         PKCS11Service pkcs11Service = new PKCS11Service();
         response.setType("signing");
@@ -74,13 +105,15 @@ public class WebsocketController {
             response = pkcs11Service.signWithToken(
                     payload.getTokenIndex(),
                     payload.getPin(),
-                    Base64.getDecoder().decode(payload.getData()));
+                    payload.getData().getBytes());
             response.setType("signing");
         } catch (TokenException | NoSuchAlgorithmException | CertificateException | CMSException | InvalidKeyException | NoSuchProviderException | SignatureException e) {
             e.printStackTrace();
             response.setError(e.getMessage());
         } catch (IOException e) {
             response.setError(e.getMessage());
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
         }
         return response;
     }
