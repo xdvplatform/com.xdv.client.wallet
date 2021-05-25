@@ -117,11 +117,10 @@ public class PKCS11Service {
 
             SignResponse response = new SignResponse();
             String temp = Base64.getEncoder().encodeToString(certificate1.getPublicKey().getEncoded());
-            String publicKeyPEM = "-----BEGIN PUBLIC KEY-----\n" + temp;
-            publicKeyPEM = publicKeyPEM + "\n-----END PUBLIC KEY-----\n";
+            String temp2 = Base64.getEncoder().encodeToString(certificate1.getPublicKey().getEncoded());
 
             response.setPublicKey(temp);
-            response.setPublicKey2(pem);
+            response.setPublicKey2(temp2);
             return response;
         } else {
             return new SignResponse();
@@ -155,12 +154,8 @@ public class PKCS11Service {
         X509PublicKeyCertificate certificate = new X509PublicKeyCertificate();
         if (foundSignatureKeyObjects.length > 0) {
             Mechanism signatureMechanism = getSupportedMechanism(token, mechCode);
-            // MessageDigest md = MessageDigest.getInstance("SHA-256");
-            // byte[] hashValue = md.digest(data);
 
             Key key = (Key) foundSignatureKeyObjects[0];
-            // key.
-            // byte[] pub = ((X509PublicKeyCertificate)certs[0]).getValue().getByteArrayValue();
             session.signInit(signatureMechanism, key);
             byte[] signature = session.sign(data);
 
@@ -188,9 +183,7 @@ public class PKCS11Service {
             rsaVerify.verify(signature);
 
             SignResponse response = new SignResponse();
-            // response.setPublicKey(pem);
             response.setSignature(Base64URL.encode((signature)).toJSONString());
-            // response.setDigest(Base64.getEncoder().encodeToString(hashValue));
             return response;
         } else {
             return new SignResponse();
