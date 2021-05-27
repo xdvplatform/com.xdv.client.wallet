@@ -120,7 +120,7 @@ public class PKCS11Service {
             String temp2 = Base64.getEncoder().encodeToString(certificate1.getPublicKey().getEncoded());
 
             response.setPublicKey(temp);
-            response.setPublicKey2(temp2);
+            response.setPublicKey2(pem);
             return response;
         } else {
             return new SignResponse();
