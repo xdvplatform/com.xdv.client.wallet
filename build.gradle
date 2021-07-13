@@ -1,29 +1,39 @@
 buildscript {
 	repositories {
-		maven { url uri('https://jitpack.io') }
+		mavenCentral()
+		jcenter()
+		maven { url 'https://repo.spring.io/release' }
+
 	}
 	dependencies {
-		classpath 'com.github.i-net-software:jwebassembly-gradle:master-SNAPSHOT'
+		classpath 'io.github.zebalu:teavm-gradle-plugin:+'
 	}
 }
 
-
 plugins {
-	id 'org.springframework.boot' version '2.3.1.RELEASE'
-	id 'io.spring.dependency-management' version '1.0.9.RELEASE'
+	id 'org.springframework.boot' version '2.5.2'
+	id 'org.springframework.experimental.aot' version '0.10.1'
+	id 'org.graalvm.buildtools.native' version '0.9.0'
+
 	id 'java'
 }
+
+
 
 group = 'com.xdv.client'
 version = '1.0.0'
 sourceCompatibility = '11'
-apply plugin: 'de.inetsoftware.jwebassembly'
+
 repositories {
 	mavenCentral()
 	maven { url 'https://jitpack.io' } // for snapshot of the API
 	jcenter()
+	maven { url 'https://repo.spring.io/release' }
+
 }
+
 dependencies {
+
 	compile group: 'org.xipki.iaik', name: 'sunpkcs11-wrapper', version: '1.4.7'
 
 	compile group: 'com.google.inject.extensions', name: 'guice-multibindings', version: '2.0'
@@ -35,16 +45,16 @@ dependencies {
 
 	compile 'com.nimbusds:nimbus-jose-jwt:9.9.2'
 
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-security'
-	compile group: 'org.springframework.boot', name: 'spring-boot-starter-websocket', version: '2.3.0.RELEASE'
+	implementation 'org.springframework.boot:spring-boot-starter-web:2.5.2'
+	implementation 'org.springframework.boot:spring-boot-starter-security:2.5.2'
+	compile group: 'org.springframework.boot', name: 'spring-boot-starter-websocket', version: '2.5.2'
 
 	compile ('org.web3j:core:4.5.5')
 // https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk15on
 	compile group: 'org.bouncycastle', name: 'bcpkix-jdk15on', version: '1.64'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
-	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	testImplementation('org.springframework.boot:spring-boot-starter-test') {
+	// developmentOnly 'org.springframework.boot:spring-boot-devtools:2.5.2'
+	testImplementation('org.springframework.boot:spring-boot-starter-test:2.5.2') {
 		exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
 	}
 }
@@ -52,3 +62,4 @@ dependencies {
 test {
 	useJUnitPlatform()
 }
+

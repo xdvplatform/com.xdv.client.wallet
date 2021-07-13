@@ -1,5 +1,6 @@
 package com.xdv.client.wallet;
 
+
 import java.security.*;
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.RSASSASigner;
@@ -7,7 +8,6 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jca.JCAContext;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.*;
-import demo.pkcs.pkcs11.wrapper.signatures.KeyUtil;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.spi.DSSUtils;
 import iaik.pkcs.pkcs11.*;
@@ -65,13 +65,14 @@ public class PKCS11Service {
 
     }
 
+
     public void initialize() throws TokenException, IOException {
         if (PKCS11Service.isUnix()) {
             this.module = Module.getInstance("/usr/lib/libaetpkss.so");
         } else if (PKCS11Service.isMac()) {
             this.module = Module.getInstance("/usr/local/lib/libaetpkss.dylib");
         } else if (PKCS11Service.isWindows()) {
-            this.module = Module.getInstance("C:\\Windows\\SysWOW64\\aetpksse.dll");
+                            this.module = Module.getInstance("C:\\Windows\\SysWOW64\\aetpksse.dll");
         }
 
         this.module.initialize(new DefaultInitializeArgs());
