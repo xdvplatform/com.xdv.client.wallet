@@ -11,7 +11,6 @@ import java.util.concurrent.Executor;
 
 
 @SpringBootApplication()
-@EnableAsync()
 public class WalletApplication extends AsyncConfigurerSupport {
 	private static Logger LOG = LoggerFactory.getLogger(WalletApplication.class);
 
@@ -19,18 +18,6 @@ public class WalletApplication extends AsyncConfigurerSupport {
 		SpringApplication.run(WalletApplication.class, args);
 	}
 
-
-
-	@Override
-	public Executor getAsyncExecutor() {
-		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-		executor.setCorePoolSize(2);
-		executor.setMaxPoolSize(2);
-		executor.setQueueCapacity(500);
-		executor.setThreadNamePrefix("main.accounts:");
-		executor.initialize();
-		return executor;
-	}
 
 
 }

@@ -27,11 +27,6 @@ import java.util.Collections;
 
 @Configuration
 @EnableWebSecurity
-@EnableGlobalMethodSecurity(
-        securedEnabled = true,
-        jsr250Enabled = true,
-        prePostEnabled = true
-)
 public class Cors extends WebSecurityConfigurerAdapter {
 
     // https://docs.spring.io/spring-security/site/docs/4.2.x/reference/html/cors.html
@@ -46,7 +41,7 @@ public class Cors extends WebSecurityConfigurerAdapter {
 
         // setAllowCredentials(true) is important, otherwise:
         // The value of the 'Access-Control-Allow-Origin' header in the response must not be the wildcard '*' when the request's credentials mode is 'include'.
-        configuration.setAllowCredentials(true);
+//        configuration.setAllowCredentials(true);
         // setAllowedHeaders is important! Without it, OPTIONS preflight request
         // will fail with 403 Invalid CORS request
         configuration
