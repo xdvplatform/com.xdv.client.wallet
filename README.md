@@ -142,4 +142,11 @@ Sample code
             }
 
 ```
+
+
+### Native Image
+
+1. Run `gradle assemble`
+2. Run `native-image -jar wallet-1.0.0.jar`
+3. Package image and done
 ### MIT licensed 

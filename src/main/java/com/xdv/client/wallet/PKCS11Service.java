@@ -8,9 +8,13 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jca.JCAContext;
 import com.nimbusds.jose.util.Base64URL;
 import com.nimbusds.jwt.*;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
+import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
 import eu.europa.esig.dss.spi.DSSUtils;
 import iaik.pkcs.pkcs11.*;
+
 import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Module;
 import iaik.pkcs.pkcs11.objects.*;
@@ -19,6 +23,7 @@ import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Exception;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.*;
+import org.bouncycastle.tsp.TimeStampToken;
 import org.springframework.boot.SpringApplication;
 
 import java.io.ByteArrayInputStream;
@@ -87,6 +92,9 @@ public class PKCS11Service {
         return slots[tokenIndex].getToken();
     }
 
+    private void getTSP() {
+
+    }
 
     public SignResponse getPublicKey(int tokenIndex, String pin) throws TokenException, NoSuchAlgorithmException, CertificateException, CMSException, InvalidKeyException, NoSuchProviderException, SignatureException {
 
@@ -182,6 +190,20 @@ public class PKCS11Service {
             rsaVerify.initVerify(pub);
             rsaVerify.update(data);
             rsaVerify.verify(signature);
+
+
+            final String tspServer = "http://tsp.pki.gob.pa/tsr";
+            OnlineTSPSource tspSource = new OnlineTSPSource(tspServer);
+            tspSource.setDataLoader(new TimestampDataLoader()); // uses the specific content-type
+
+            final DigestAlgorithm digestAlgorithm = DigestAlgorithm.SHA256;
+            final byte[] toDigest = data;
+            final byte[] digestValue = DSSUtils.digest(digestAlgorithm, toDigest);
+            TimeStampToken tsBinary = tspSource.getTimeStampResponse(digestAlgorithm, digestValue);
+
+
+            System.out.println(tsBinary.getTimeStampInfo().getPolicy().toString());
+            System.out.println(DSSUtils.toHex(tsBinary.getTimeStampInfo().getMessageImprintDigest()));
 
             SignResponse response = new SignResponse();
             response.setSignature(Base64URL.encode((signature)).toJSONString());
