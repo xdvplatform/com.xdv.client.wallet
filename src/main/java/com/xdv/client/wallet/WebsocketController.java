@@ -102,7 +102,7 @@ public class WebsocketController {
             SignPayload payload;
             payload = mapper.readValue((byte[]) p, SignPayload.class);
 
-            response = pkcs11Service.signWithToken(
+            response = pkcs11Service.signPdfWithToken(
                     payload.getTokenIndex(),
                     payload.getPin(),
                     payload.getData().getBytes());

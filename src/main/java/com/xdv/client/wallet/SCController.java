@@ -82,7 +82,7 @@ public class SCController {
             PKCS11Service pkcs11Service = new PKCS11Service();
             pkcs11Service.initialize();
 
-            SignResponse response = pkcs11Service.signWithToken(
+            SignResponse response = pkcs11Service.signPdfWithToken(
                     tokenIndex,
                     payload.getPin(),
                     Base64.getDecoder().decode(payload.getData())

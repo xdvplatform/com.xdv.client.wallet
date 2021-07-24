@@ -11,7 +11,7 @@ import java.util.concurrent.Executor;
 
 
 @SpringBootApplication()
-public class WalletApplication extends AsyncConfigurerSupport {
+public class WalletApplication  {
 	private static Logger LOG = LoggerFactory.getLogger(WalletApplication.class);
 
 	public static void main(String[] args) {

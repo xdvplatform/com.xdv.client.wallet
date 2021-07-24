@@ -29,16 +29,33 @@ repositories {
 	maven { url 'https://jitpack.io' } // for snapshot of the API
 	jcenter()
 	maven { url 'https://repo.spring.io/release' }
-
+	maven {
+		url "https://ec.europa.eu/cefdigital/artifact/content/repositories/esignaturedss"
+	}
 }
+
 
 dependencies {
 
 	compile group: 'org.xipki.iaik', name: 'sunpkcs11-wrapper', version: '1.4.7'
 
 	compile group: 'com.google.inject.extensions', name: 'guice-multibindings', version: '2.0'
-	compile group: 'org.digidoc4j', name: 'digidoc4j', version: '4.0.1'
+
+	// https://mvnrepository.com/artifact/org.digidoc4j.dss/dss-document
+	implementation group: 'org.digidoc4j.dss', name: 'dss-document', version: '5.7.d4j.2'
+// https://mvnrepository.com/artifact/org.digidoc4j.dss/dss-document
+	implementation group: 'org.digidoc4j.dss', name: 'dss-utils-google-guava', version: '5.7.d4j.2'
+// https://mvnrepository.com/artifact/org.digidoc4j.dss/dss-document
+	implementation group: 'org.digidoc4j.dss', name: 'dss-token', version: '5.7.d4j.2'
+	implementation group: 'org.digidoc4j.dss', name: 'dss-pades-pdfbox', version: '5.7.d4j.2'
+	implementation group: 'org.digidoc4j.dss', name: 'dss-pades', version: '5.7.d4j.2'
+	implementation group: 'org.digidoc4j.dss', name: 'dss-service', version: '5.7.d4j.2'
+	implementation group: 'org.digidoc4j.dss', name: 'dss-spi', version: '5.7.d4j.2'
+implementation 'eu.europa.ec.joinup.sd-dss:sd-dss:5.9.RC1'
+
 	compile group: 'org.springframework', name: 'spring-messaging', version: '5.2.7.RELEASE'
+
+
 
 	compile 'io.reactivex.rxjava2:rxjava:2.0.8'
 	compile 'com.squareup.okhttp:okhttp:2.5.0'

@@ -8,11 +8,11 @@ import eu.europa.esig.dss.service.crl.OnlineCRLSource;
 import eu.europa.esig.dss.service.http.commons.CommonsDataLoader;
 import eu.europa.esig.dss.service.ocsp.OnlineOCSPSource;
 import eu.europa.esig.dss.spi.DSSUtils;
-import eu.europa.esig.dss.spi.tsl.TrustedListsCertificateSource;
-import eu.europa.esig.dss.spi.x509.CertificateSource;
 import eu.europa.esig.dss.spi.x509.CommonTrustedCertificateSource;
-import eu.europa.esig.dss.spi.x509.KeyStoreCertificateSource;
-import eu.europa.esig.dss.validation.*;
+import eu.europa.esig.dss.validation.CertificateValidator;
+import eu.europa.esig.dss.validation.CertificateVerifier;
+import eu.europa.esig.dss.validation.CommonCertificateVerifier;
+import eu.europa.esig.dss.validation.SignedDocumentValidator;
 import eu.europa.esig.dss.validation.reports.CertificateReports;
 import eu.europa.esig.dss.validation.reports.Reports;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -30,6 +30,7 @@ import org.springframework.util.ResourceUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.async.DeferredResult;
 
+
 import javax.xml.bind.DatatypeConverter;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
@@ -39,9 +40,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.Collection;
 import java.util.Iterator;
-
 import static org.springframework.web.bind.annotation.RequestMethod.*;
-
 
 @RestController
 public class VerificationController {
@@ -109,6 +108,7 @@ System.console().writer().write(e.getMessage());
 
             //Pass them both to CMSSignedData constructor
             CMSSignedData cms = new CMSSignedData(signedContent, is);
+
 
             CMSSignedDocument cmsSignedDocument = new CMSSignedDocument(cms);
             documentValidator = SignedDocumentValidator.fromDocument(cmsSignedDocument);
@@ -183,7 +183,7 @@ System.console().writer().write(e.getMessage());
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(fileContent);
-            return DatatypeConverter.printHexBinary(md.digest()).toUpperCase();
+            return      DatatypeConverter.printHexBinary(md.digest()).toUpperCase();
         } catch (NoSuchAlgorithmException e) {
             return "";
         }
